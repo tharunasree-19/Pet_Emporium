@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Paws & Claws Pet Shop{% endblock %}</title>
+    <style>
+        /* GitHub-inspired theme */
+        :root {
+            --color-canvas-default: #ffffff;
+            --color-canvas-subtle: #f6f8fa;
+            --color-border-default: #d1d9e0;
+            --color-fg-default: #1f2328;
+            --color-fg-muted: #656d76;
+            --color-accent-fg: #0969da;
+            --color-success-fg: #1a7f37;
+            --color-danger-fg: #d1242f;
+            --color-attention-fg: #9a6700;
+            --color-btn-bg: #f6f8fa;
+            --color-btn-border: #d1d9e0;
+            --color-btn-hover-bg: #f3f4f6;
+            --color-btn-primary-bg: #1f883d;
+            --color-btn-primary-hover-bg: #1a7f37;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Noto Sans', Helvetica, Arial, sans-serif;
+            background-color: var(--color-canvas-default);
+            color: var(--color-fg-default);
+            line-height: 1.5;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--color-canvas-default);
+            border-bottom: 1px solid var(--color-border-default);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--color-fg-default);
+            text-decoration: none;
+        }
+
+        .nav {
+            display: flex;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .nav a {
+            color: var(--color-fg-default);
+            text-decoration: none;
+            font-weight: 500;
+            padding: 8px 12px;
+            border-radius: 6px;
+            transition: background-color 0.2s;
+        }
+
+        .nav a:hover {
+            background-color: var(--color-btn-hover-bg);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-block;
+            padding: 6px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            line-height: 20px;
+            border: 1px solid var(--color-btn-border);
+            border-radius: 6px;
+            background-color: var(--color-btn-bg);
+            color: var(--color-fg-default);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover {
+            background-color: var(--color-btn-hover-bg);
+        }
+
+        .btn-primary {
+            background-color: var(--color-btn-primary-bg);
+            border-color: var(--color-btn-primary-bg);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--color-btn-primary-hover-bg);
+            border-color: var(--color-btn-primary-hover-bg);
+        }
+
+        .btn-danger {
+            background-color: var(--color-danger-fg);
+            border-color: var(--color-danger-fg);
+            color: white;
+        }
+
+        /* Flash messages */
+        .flash-messages {
+            margin: 16px 0;
+        }
+
+        .alert {
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border: 1px solid;
+        }
+
+        .alert-success {
+            background-color: #d1e7dd;
+            border-color: #badbcc;
+            color: var(--color-success-fg);
+        }
+
+        .alert-danger {
+            background-color: #f8d7da;
+            border-color: #f5c2c7;
+            color: var(--color-danger-fg);
+        }
+
+        .alert-info {
+            background-color: #d1ecf1;
+            border-color: #bee5eb;
+            color: var(--color-accent-fg);
+        }
+
+        /* Main content */
+        .main {
+            padding: 32px 0;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--color-canvas-subtle);
+            border-top: 1px solid var(--color-border-default);
+            padding: 24px 0;
+            margin-top: 48px;
+            text-align: center;
+            color: var(--color-fg-muted);
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 4px;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid var(--color-border-default);
+            border-radius: 6px;
+            font-size: 14px;
+            background-color: var(--color-canvas-default);
+            color: var(--color-fg-default);
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: var(--color-accent-fg);
+            box-shadow: 0 0 0 3px rgba(9, 105, 218, 0.1);
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--color-canvas-default);
+            border: 1px solid var(--color-border-default);
+            border-radius: 6px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+
+        /* Grid */
+        .grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .header-content {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+
+            .container {
+                padding: 0 12px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="header-content">
+                <a href="/" class="logo">🐾 Paws & Claws</a>
+                <nav class="nav">
+                    <a href="/">Home</a>
+                    <a href="/products">Products</a>
+                    {% if session.user_id %}
+                        <a href="/dashboard">Dashboard</a>
+                        {% if session.user_role == 'customer' %}
+                            <a href="/cart">Cart</a>
+                            <a href="/orders">Orders</a>
+                        {% endif %}
+                        <a href="/logout">Logout ({{ session.username }})</a>
+                    {% else %}
+                        <a href="/login">Login</a>
+                        <a href="/register">Register</a>
+                    {% endif %}
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            {% with messages = get_flashed_messages() %}
+                {% if messages %}
+                    <div class="flash-messages">
+                        {% for message in messages %}
+                            <div class="alert alert-info">{{ message }}</div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            {% endwith %}
+
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2024 Paws & Claws Pet Shop. Built with ❤️ for pets and their humans.</p>
+        </div>
+    </footer>
+</body>
+</html>

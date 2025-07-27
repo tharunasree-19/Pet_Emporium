@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}{{ product.name }} - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="/products" style="color: var(--color-accent-fg); text-decoration: none;">← Back to Products</a>
+</div>
+
+<div class="grid grid-2" style="gap: 32px;">
+    <!-- Product Image -->
+    <div>
+        {% if product.image_url %}
+        <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+             style="width: 100%; max-width: 500px; height: 400px; object-fit: cover; border-radius: 8px; border: 1px solid var(--color-border-default);">
+        {% else %}
+        <div style="width: 100%; max-width: 500px; height: 400px; background-color: var(--color-canvas-subtle); 
+                    border-radius: 8px; border: 1px solid var(--color-border-default); display: flex; 
+                    align-items: center; justify-content: center; font-size: 96px;">
+            🐾
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Product Info -->
+    <div>
+        <div style="margin-bottom: 16px;">
+            <span style="background-color: var(--color-canvas-subtle); color: var(--color-fg-muted); 
+                         padding: 4px 12px; border-radius: 12px; font-size: 12px; text-transform: uppercase;">
+                {{ product.category }}
+            </span>
+        </div>
+
+        <h1 style="font-size: 32px; margin-bottom: 16px;">{{ product.name }}</h1>
+        
+        <div style="font-size: 28px; font-weight: 600; color: var(--color-success-fg); margin-bottom: 16px;">
+            ₹{{ product.price }}
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            {% if product.stock_quantity > 0 %}
+            <span style="color: var(--color-success-fg); font-weight: 500;">
+                ✓ In Stock ({{ product.stock_quantity }} available)
+            </span>
+            {% else %}
+            <span style="color: var(--color-danger-fg); font-weight: 500;">
+                ✗ Out of Stock
+            </span>
+            {% endif %}
+        </div>
+
+        <div style="margin-bottom: 32px;">
+            <h3 style="margin-bottom: 12px;">Description</h3>
+            <p style="color: var(--color-fg-muted); line-height: 1.6;">
+                {{ product.description }}
+            </p>
+        </div>
+
+        {% if session.user_id and session.user_role == 'customer' and product.stock_quantity > 0 %}
+        <div class="card" style="background-color: var(--color-canvas-subtle);">
+            <form method="POST" action="/cart/add">
+                <input type="hidden" name="product_id" value="{{ product.product_id }}">
+                
+                <div class="form-group">
+                    <label for="quantity" class="form-label">Quantity</label>
+                    <select id="quantity" name="quantity" class="form-control" style="width: 120px;">
+                        {% for i in range(1, min(11, product.stock_quantity + 1)) %}
+                        <option value="{{ i }}">{{ i }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="font-size: 16px; padding: 12px 24px;">
+                    🛒 Add to Cart
+                </button>
+            </form>
+        </div>
+        {% elif not session.user_id %}
+        <div class="card" style="background-color: var(--color-canvas-subtle); text-align: center;">
+            <p style="margin-bottom: 16px; color: var(--color-fg-muted);">Please sign in to add items to your cart</p>
+            <div style="display: flex; gap: 12px; justify-content: center;">
+                <a href="/login" class="btn btn-primary">Sign In</a>
+                <a href="/register" class="btn">Create Account</a>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Product Details -->
+        <div style="margin-top: 32px;">
+            <h3 style="margin-bottom: 16px;">Product Details</h3>
+            <div class="card">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px;">
+                    <div>
+                        <strong>Product ID:</strong><br>
+                        <span style="color: var(--color-fg-muted); font-family: monospace; font-size: 12px;">{{ product.product_id }}</span>
+                    </div>
+                    <div>
+                        <strong>Category:</strong><br>
+                        <span style="color: var(--color-fg-muted);">{{ product.category }}</span>
+                    </div>
+                    <div>
+                        <strong>Stock:</strong><br>
+                        <span style="color: var(--color-fg-muted);">{{ product.stock_quantity }} units</span>
+                    </div>
+                    <div>
+                        <strong>Status:</strong><br>
+                        {% if product.is_active %}
+                        <span style="color: var(--color-success-fg);">Active</span>
+                        {% else %}
+                        <span style="color: var(--color-danger-fg);">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

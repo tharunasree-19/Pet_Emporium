@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 32px;">
+    <h1 style="font-size: 36px; margin-bottom: 8px;">Admin Dashboard 👨‍💼</h1>
+    <p style="color: var(--color-fg-muted);">Manage your pet shop business</p>
+</div>
+
+<!-- Business Metrics -->
+<div class="grid grid-4" style="margin-bottom: 32px;">
+    <div class="card" style="text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📦</div>
+        <h3 style="margin-bottom: 4px; color: var(--color-accent-fg);">{{ total_products }}</h3>
+        <p style="color: var(--color-fg-muted); font-size: 14px;">Total Products</p>
+    </div>
+    
+    <div class="card" style="text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">🛒</div>
+        <h3 style="margin-bottom: 4px; color: var(--color-success-fg);">{{ total_orders }}</h3>
+        <p style="color: var(--color-fg-muted); font-size: 14px;">Total Orders</p>
+    </div>
+    
+    <div class="card" style="text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">💰</div>
+        <h3 style="margin-bottom: 4px; color: var(--color-success-fg);">₹{{ "%.2f"|format(total_revenue) }}</h3>
+        <p style="color: var(--color-fg-muted); font-size: 14px;">Total Revenue</p>
+    </div>
+    
+    <div class="card" style="text-align: center;">
+        <div style="font-size: 32px; margin-bottom: 8px;">📊</div>
+        <h3 style="margin-bottom: 4px; color: var(--color-attention-fg);">{{ category_stats|length }}</h3>
+        <p style="color: var(--color-fg-muted); font-size: 14px;">Categories</p>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div style="margin-bottom: 32px;">
+    <h2 style="margin-bottom: 16px;">Quick Actions</h2>
+    <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+        <a href="/admin/products/add" class="btn btn-primary">➕ Add Product</a>
+        <a href="/admin/orders" class="btn">📋 Manage Orders</a>
+        <a href="/products" class="btn">👀 View Store</a>
+        <a href="/api/orders/stats" class="btn" target="_blank">📊 API Stats</a>
+    </div>
+</div>
+
+<div class="grid grid-2" style="gap: 32px;">
+    <!-- Recent Orders -->
+    <div>
+        <h2 style="margin-bottom: 16px;">Recent Orders</h2>
+        {% if recent_orders %}
+            {% for order in recent_orders %}
+            <div class="card" style="margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <h4 style="font-size: 16px;">Order #{{ order.order_id[:8] }}...</h4>
+                    <span style="padding: 2px 8px; border-radius: 12px; font-size: 12px; text-transform: uppercase;
+                                {% if order.status == 'completed' %}background-color: #d1e7dd; color: var(--color-success-fg);
+                                {% elif order.status == 'pending' %}background-color: #fff3cd; color: var(--color-attention-fg);
+                                {% elif order.status == 'processing' %}background-color: #cff4fc; color: var(--color-accent-fg);
+                                {% else %}background-color: var(--color-canvas-subtle); color: var(--color-fg-muted);{% endif %}">
+                        {{ order.status }}
+                    </span>
+                </div>
+                
+                <div style="margin-bottom: 8px;">
+                    <p style="color: var(--color-fg-muted); font-size: 14px;">
+                        <strong>Customer:</strong> {{ order.customer_name }}
+                    </p>
+                    <p style="color: var(--color-fg-muted); font-size: 14px;">
+                        <strong>Items:</strong> {{ order.items|length }} • 
+                        <strong>Date:</strong> {{ order.created_at[:10] }}
+                    </p>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-weight: 600; color: var(--color-success-fg);">₹{{ order.total_amount }}</span>
+                    <a href="/admin/orders" class="btn" style="font-size: 12px;">Manage</a>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div style="text-align: center; margin-top: 16px;">
+                <a href="/admin/orders" class="btn">View All Orders</a>
+            </div>
+        {% else %}
+            <div class="card" style="text-align: center; padding: 32px;">
+                <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                <h3 style="margin-bottom: 8px;">No orders yet</h3>
+                <p style="color: var(--color-fg-muted);">Orders will appear here once customers start shopping</p>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Category Statistics -->
+    <div>
+        <h2 style="margin-bottom: 16px;">Product Categories</h2>
+        {% if category_stats %}
+            {% for category, count in category_stats.items() %}
+            <div class="card" style="margin-bottom: 12px;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <h4 style="font-size: 16px; margin-bottom: 4px;">
+                            {% if category == 'Food' %}🍽️
+                            {% elif category == 'Toys' %}🧸
+                            {% elif category == 'Accessories' %}👔
+                            {% elif category == 'Health' %}💊
+                            {% elif category == 'Grooming' %}✂️
+                            {% elif category == 'Training' %}🎓
+                            {% else %}📦{% endif %}
+                            {{ category }}
+                        </h4>
+                        <p style="color: var(--color-fg-muted); font-size: 14px;">{{ count }} product(s)</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <div style="width: 40px; height: 40px; background-color: var(--color-canvas-subtle); 
+                                    border-radius: 50%; display: flex; align-items: center; justify-content: center; 
+                                    font-weight: 600; color: var(--color-accent-fg);">
+                            {{ count }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+            
+            <div style="text-align: center; margin-top: 16px;">
+                <a href="/products" class="btn">View All Products</a>
+            </div>
+        {% else %}
+            <div class="card" style="text-align: center; padding: 32px;">
+                <div style="font-size: 48px; margin-bottom: 16px;">📦</div>
+                <h3 style="margin-bottom: 8px;">No products yet</h3>
+                <p style="color: var(--color-fg-muted); margin-bottom: 16px;">Add some products to see category stats</p>
+                <a href="/admin/products/add" class="btn btn-primary">Add Product</a>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Business Insights -->
+<div style="margin-top: 32px;">
+    <h2 style="margin-bottom: 16px;">Business Insights</h2>
+    <div class="grid grid-3">
+        <div class="card" style="text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 12px;">📈</div>
+            <h3 style="margin-bottom: 8px;">Growing Business</h3>
+            <p style="color: var(--color-fg-muted); font-size: 14px;">
+                Your pet shop is serving {{ total_orders }} orders with ₹{{ "%.2f"|format(total_revenue) }} in revenue
+            </p>
+        </div>
+        
+        <div class="card" style="text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 12px;">🎯</div>
+            <h3 style="margin-bottom: 8px;">Product Variety</h3>
+            <p style="color: var(--color-fg-muted); font-size: 14px;">
+                {{ total_products }} products across {{ category_stats|length }} categories
+            </p>
+        </div>
+        
+        <div class="card" style="text-align: center;">
+            <div style="font-size: 24px; margin-bottom: 12px;">💡</div>
+            <h3 style="margin-bottom: 8px;">Tips</h3>
+            <p style="color: var(--color-fg-muted); font-size: 14px;">
+                Keep adding new products and manage orders promptly for better customer satisfaction
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

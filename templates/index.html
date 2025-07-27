@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block title %}Home - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="text-align: center; margin-bottom: 48px;">
+    <h1 style="font-size: 48px; margin-bottom: 16px; color: var(--color-fg-default);">🐾 Welcome to Paws & Claws</h1>
+    <p style="font-size: 20px; color: var(--color-fg-muted); max-width: 600px; margin: 0 auto;">
+        Your one-stop shop for everything your furry friends need. From premium food to fun toys, we've got it all!
+    </p>
+</div>
+
+<div style="background-color: var(--color-canvas-subtle); padding: 32px; border-radius: 12px; margin-bottom: 48px;">
+    <div class="grid grid-3">
+        <div style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🐕</div>
+            <h3 style="margin-bottom: 8px;">Dog Supplies</h3>
+            <p style="color: var(--color-fg-muted);">Premium food, toys, and accessories for your canine companions</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🐱</div>
+            <h3 style="margin-bottom: 8px;">Cat Essentials</h3>
+            <p style="color: var(--color-fg-muted);">Everything your feline friends need to stay happy and healthy</p>
+        </div>
+        <div style="text-align: center;">
+            <div style="font-size: 48px; margin-bottom: 16px;">🐦</div>
+            <h3 style="margin-bottom: 8px;">Small Pets</h3>
+            <p style="color: var(--color-fg-muted);">Supplies for birds, hamsters, rabbits, and other small pets</p>
+        </div>
+    </div>
+</div>
+
+{% if products %}
+<section>
+    <h2 style="font-size: 32px; margin-bottom: 24px; text-align: center;">Featured Products</h2>
+    <div class="grid grid-3">
+        {% for product in products %}
+        <div class="card">
+            {% if product.image_url %}
+            <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+                 style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px; margin-bottom: 12px;">
+            {% else %}
+            <div style="width: 100%; height: 200px; background-color: var(--color-canvas-subtle); 
+                        border-radius: 6px; margin-bottom: 12px; display: flex; align-items: center; 
+                        justify-content: center; font-size: 48px;">
+                🐾
+            </div>
+            {% endif %}
+            
+            <h3 style="margin-bottom: 8px; font-size: 18px;">{{ product.name }}</h3>
+            <p style="color: var(--color-fg-muted); margin-bottom: 12px; font-size: 14px;">
+                {{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}
+            </p>
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <span style="font-size: 20px; font-weight: 600; color: var(--color-success-fg);">
+                    ₹{{ product.price }}
+                </span>
+                <span style="font-size: 12px; color: var(--color-fg-muted); 
+                           background-color: var(--color-canvas-subtle); padding: 2px 8px; border-radius: 12px;">
+                    {{ product.category }}
+                </span>
+            </div>
+            
+            <div style="display: flex; gap: 8px;">
+                <a href="/product/{{ product.product_id }}" class="btn" style="flex: 1; text-align: center;">
+                    View Details
+                </a>
+                {% if session.user_id and session.user_role == 'customer' %}
+                <form method="POST" action="/cart/add" style="flex: 1;">
+                    <input type="hidden" name="product_id" value="{{ product.product_id }}">
+                    <input type="hidden" name="quantity" value="1">
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">Add to Cart</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div style="text-align: center; margin-top: 32px;">
+        <a href="/products" class="btn btn-primary" style="font-size: 16px; padding: 12px 24px;">
+            View All Products →
+        </a>
+    </div>
+</section>
+{% endif %}
+
+{% if not session.user_id %}
+<section style="background-color: var(--color-canvas-subtle); padding: 32px; border-radius: 12px; margin-top: 48px; text-align: center;">
+    <h2 style="margin-bottom: 16px;">Join Our Pet-Loving Community!</h2>
+    <p style="color: var(--color-fg-muted); margin-bottom: 24px;">
+        Create an account to start shopping for your furry friends and track your orders.
+    </p>
+    <div style="display: flex; gap: 16px; justify-content: center;">
+        <a href="/register" class="btn btn-primary">Create Account</a>
+        <a href="/login" class="btn">Sign In</a>
+    </div>
+</section>
+{% endif %}
+{% endblock %}

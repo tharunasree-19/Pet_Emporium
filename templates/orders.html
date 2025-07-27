@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}My Orders - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <h1 style="font-size: 36px;">📦 My Orders</h1>
+    <a href="/products" class="btn btn-primary">Continue Shopping</a>
+</div>
+
+{% if orders %}
+    {% for order in orders %}
+    <div class="card" style="margin-bottom: 24px;">
+        <!-- Order Header -->
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px; 
+                    padding-bottom: 16px; border-bottom: 1px solid var(--color-border-default);">
+            <div>
+                <h3 style="font-size: 18px; margin-bottom: 4px;">Order #{{ order.order_id[:8] }}...</h3>
+                <p style="color: var(--color-fg-muted); font-size: 14px;">
+                    Placed on {{ order.created_at[:10] }} at {{ order.created_at[11:16] }}
+                </p>
+            </div>
+            
+            <div style="text-align: right;">
+                <span style="padding: 4px 12px; border-radius: 12px; font-size: 12px; text-transform: uppercase; font-weight: 500;
+                            {% if order.status == 'completed' %}background-color: #d1e7dd; color: var(--color-success-fg);
+                            {% elif order.status == 'pending' %}background-color: #fff3cd; color: var(--color-attention-fg);
+                            {% elif order.status == 'processing' %}background-color: #cff4fc; color: var(--color-accent-fg);
+                            {% elif order.status == 'shipped' %}background-color: #e2e3e5; color: var(--color-fg-default);
+                            {% else %}background-color: var(--color-canvas-subtle); color: var(--color-fg-muted);{% endif %}">
+                    {{ order.status }}
+                </span>
+                <div style="font-size: 20px; font-weight: 600; color: var(--color-success-fg); margin-top: 4px;">
+                    ₹{{ order.total_amount }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div style="margin-bottom: 16px;">
+            <h4 style="margin-bottom: 12px; font-size: 16px;">Items Ordered ({{ order.items|length }})</h4>
+            <div style="display: grid; gap: 8px;">
+                {% for item in order.items %}
+                <div style="display: flex; justify-content: space-between; align-items: center; 
+                            padding: 8px 0; border-bottom: 1px solid var(--color-border-muted);">
+                    <div>
+                        <strong style="font-size: 14px;">{{ item.product_name }}</strong>
+                        <div style="color: var(--color-fg-muted); font-size: 12px;">
+                            Quantity: {{ item.quantity }} × ₹{{ item.price }}
+                        </div>
+                    </div>
+                    <div style="font-weight: 600;">₹{{ "%.2f"|format(item.total) }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Order Details -->
+        <div style="background-color: var(--color-canvas-subtle); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+            <div class="grid grid-2" style="gap: 16px;">
+                <div>
+                    <h5 style="margin-bottom: 8px; font-size: 14px; color: var(--color-fg-muted);">SHIPPING ADDRESS</h5>
+                    <p style="font-size: 14px;">{{ order.shipping_address }}</p>
+                </div>
+                <div>
+                    <h5 style="margin-bottom: 8px; font-size: 14px; color: var(--color-fg-muted);">PAYMENT METHOD</h5>
+                    <p style="font-size: 14px; text-transform: capitalize;">
+                        {% if order.payment_method == 'cod' %}Cash on Delivery
+                        {% elif order.payment_method == 'upi' %}UPI Payment
+                        {% elif order.payment_method == 'card' %}Credit/Debit Card
+                        {% else %}{{ order.payment_method }}{% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Actions -->
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div style="color: var(--color-fg-muted); font-size: 12px;">
+                Order ID: {{ order.order_id }}
+            </div>
+            
+            <div style="display: flex; gap: 8px;">
+                {% if order.status == 'pending' %}
+                <span style="color: var(--color-attention-fg); font-size: 12px;">⏳ Processing your order</span>
+                {% elif order.status == 'processing' %}
+                <span style="color: var(--color-accent-fg); font-size: 12px;">📦 Preparing for shipment</span>
+                {% elif order.status == 'shipped' %}
+                <span style="color: var(--color-accent-fg); font-size: 12px;">🚚 On the way</span>
+                {% elif order.status == 'completed' %}
+                <span style="color: var(--color-success-fg); font-size: 12px;">✅ Delivered</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div style="text-align: center; padding: 64px 0;">
+        <div style="font-size: 64px; margin-bottom: 16px;">📦</div>
+        <h2 style="margin-bottom: 8px;">No orders yet</h2>
+        <p style="color: var(--color-fg-muted); margin-bottom: 24px;">
+            When you place orders, they'll appear here. Start shopping for your pets!
+        </p>
+        <a href="/products" class="btn btn-primary">Shop Now</a>
+    </div>
+{% endif %}
+{% endblock %}

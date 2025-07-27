@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+
+{% block title %}Products - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <h1 style="font-size: 36px;">Our Products</h1>
+    {% if session.user_role == 'admin' %}
+    <a href="/admin/products/add" class="btn btn-primary">Add New Product</a>
+    {% endif %}
+</div>
+
+<!-- Category Filter -->
+<div style="margin-bottom: 32px;">
+    <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a href="/products" class="btn {% if not selected_category %}btn-primary{% endif %}">All Categories</a>
+        <a href="/products?category=Food" class="btn {% if selected_category == 'Food' %}btn-primary{% endif %}">Food</a>
+        <a href="/products?category=Toys" class="btn {% if selected_category == 'Toys' %}btn-primary{% endif %}">Toys</a>
+        <a href="/products?category=Accessories" class="btn {% if selected_category == 'Accessories' %}btn-primary{% endif %}">Accessories</a>
+        <a href="/products?category=Health" class="btn {% if selected_category == 'Health' %}btn-primary{% endif %}">Health</a>
+    </div>
+</div>
+
+{% if products %}
+<div class="grid grid-3">
+    {% for product in products %}
+    <div class="card">
+        {% if product.image_url %}
+        <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+             style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px; margin-bottom: 12px;">
+        {% else %}
+        <div style="width: 100%; height: 200px; background-color: var(--color-canvas-subtle); 
+                    border-radius: 6px; margin-bottom: 12px; display: flex; align-items: center; 
+                    justify-content: center; font-size: 48px;">
+            🐾
+        </div>
+        {% endif %}
+        
+        <h3 style="margin-bottom: 8px; font-size: 18px;">{{ product.name }}</h3>
+        <p style="color: var(--color-fg-muted); margin-bottom: 12px; font-size: 14px;">
+            {{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}
+        </p>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 20px; font-weight: 600; color: var(--color-success-fg);">
+                ₹{{ product.price }}
+            </span>
+            <span style="font-size: 12px; color: var(--color-fg-muted); 
+                       background-color: var(--color-canvas-subtle); padding: 2px 8px; border-radius: 12px;">
+                {{ product.category }}
+            </span>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+            <span style="font-size: 12px; color: var(--color-fg-muted);">
+                Stock: {{ product.stock_quantity }}
+            </span>
+            {% if product.stock_quantity > 0 %}
+            <span style="color: var(--color-success-fg); font-size: 12px;">✓ In Stock</span>
+            {% else %}
+            <span style="color: var(--color-danger-fg); font-size: 12px;">✗ Out of Stock</span>
+            {% endif %}
+        </div>
+        
+        <div style="display: flex; gap: 8px;">
+            <a href="/product/{{ product.product_id }}" class="btn" style="flex: 1; text-align: center;">
+                View Details
+            </a>
+            {% if session.user_id and session.user_role == 'customer' and product.stock_quantity > 0 %}
+            <form method="POST" action="/cart/add" style="flex: 1;">
+                <input type="hidden" name="product_id" value="{{ product.product_id }}">
+                <input type="hidden" name="quantity" value="1">
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Add to Cart</button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% else %}
+<div style="text-align: center; padding: 64px 0;">
+    <div style="font-size: 64px; margin-bottom: 16px;">🔍</div>
+    <h2 style="margin-bottom: 8px;">No products found</h2>
+    <p style="color: var(--color-fg-muted);">Try adjusting your filters or check back later.</p>
+</div>
+{% endif %}
+{% endblock %}

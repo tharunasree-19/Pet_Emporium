@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Orders - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 32px;">
+    <h1 style="font-size: 36px;">📋 Manage Orders</h1>
+    <a href="/admin/dashboard" class="btn">← Back to Dashboard</a>
+</div>
+
+{% if orders %}
+    <div style="margin-bottom: 24px;">
+        <div class="grid grid-4">
+            <div class="card" style="text-align: center;">
+                <div style="font-size: 24px; margin-bottom: 8px;">📦</div>
+                <h4>{{ orders|length }}</h4>
+                <p style="color: var(--color-fg-muted); font-size: 12px;">Total Orders</p>
+            </div>
+            <div class="card" style="text-align: center;">
+                <div style="font-size: 24px; margin-bottom: 8px;">⏳</div>
+                <h4>{{ (orders|selectattr('status', 'equalto', 'pending')|list)|length }}</h4>
+                <p style="color: var(--color-fg-muted); font-size: 12px;">Pending</p>
+            </div>
+            <div class="card" style="text-align: center;">
+                <div style="font-size: 24px; margin-bottom: 8px;">🚚</div>
+                <h4>{{ (orders|selectattr('status', 'equalto', 'processing')|list)|length }}</h4>
+                <p style="color: var(--color-fg-muted); font-size: 12px;">Processing</p>
+            </div>
+            <div class="card" style="text-align: center;">
+                <div style="font-size: 24px; margin-bottom: 8px;">✅</div>
+                <h4>{{ (orders|selectattr('status', 'equalto', 'completed')|list)|length }}</h4>
+                <p style="color: var(--color-fg-muted); font-size: 12px;">Completed</p>
+            </div>
+        </div>
+    </div>
+
+    {% for order in orders %}
+    <div class="card" style="margin-bottom: 24px;">
+        <!-- Order Header -->
+        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 16px;">
+            <div style="flex: 1;">
+                <h3 style="font-size: 18px; margin-bottom: 4px;">Order #{{ order.order_id[:8] }}...</h3>
+                <p style="color: var(--color-fg-muted); font-size: 14px;">
+                    <strong>Customer:</strong> {{ order.customer_name }} • 
+                    <strong>Date:</strong> {{ order.created_at[:10] }} {{ order.created_at[11:16] }}
+                </p>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 16px;">
+                <span style="font-size: 18px; font-weight: 600; color: var(--color-success-fg);">
+                    ₹{{ order.total_amount }}
+                </span>
+                
+                <!-- Status Update Form -->
+                <form method="POST" action="/admin/orders/{{ order.order_id }}/update" style="display: flex; align-items: center; gap: 8px;">
+                    <select name="status" class="form-control" style="width: 120px; font-size: 12px; padding: 4px 8px;"
+                            onchange="this.form.submit()">
+                        <option value="pending" {% if order.status == 'pending' %}selected{% endif %}>Pending</option>
+                        <option value="processing" {% if order.status == 'processing' %}selected{% endif %}>Processing</option>
+                        <option value="shipped" {% if order.status == 'shipped' %}selected{% endif %}>Shipped</option>
+                        <option value="completed" {% if order.status == 'completed' %}selected{% endif %}>Completed</option>
+                        <option value="cancelled" {% if order.status == 'cancelled' %}selected{% endif %}>Cancelled</option>
+                    </select>
+                </form>
+            </div>
+        </div>
+
+        <!-- Order Items -->
+        <div style="background-color: var(--color-canvas-subtle); padding: 16px; border-radius: 6px; margin-bottom: 16px;">
+            <h4 style="margin-bottom: 12px; font-size: 14px;">ITEMS ({{ order.items|length }})</h4>
+            <div style="display: grid; gap: 8px;">
+                {% for item in order.items %}
+                <div style="display: flex; justify-content: space-between; align-items: center; 
+                            padding: 6px 0; border-bottom: 1px solid var(--color-border-muted);">
+                    <div>
+                        <strong style="font-size: 13px;">{{ item.product_name }}</strong>
+                        <div style="color: var(--color-fg-muted); font-size: 11px;">
+                            {{ item.quantity }} × ₹{{ item.price }}
+                        </div>
+                    </div>
+                    <div style="font-weight: 600; font-size: 13px;">₹{{ "%.2f"|format(item.total) }}</div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Order Details -->
+        <div class="grid grid-2" style="gap: 16px;">
+            <div>
+                <h5 style="margin-bottom: 8px; font-size: 12px; color: var(--color-fg-muted); text-transform: uppercase;">Shipping Address</h5>
+                <p style="font-size: 13px; background-color: var(--color-canvas-subtle); padding: 8px; border-radius: 4px;">
+                    {{ order.shipping_address }}
+                </p>
+            </div>
+            <div>
+                <h5 style="margin-bottom: 8px; font-size: 12px; color: var(--color-fg-muted); text-transform: uppercase;">Payment & Status</h5>
+                <div style="background-color: var(--color-canvas-subtle); padding: 8px; border-radius: 4px;">
+                    <p style="font-size: 13px; margin-bottom: 4px;">
+                        <strong>Payment:</strong> 
+                        {% if order.payment_method == 'cod' %}Cash on Delivery
+                        {% elif order.payment_method == 'upi' %}UPI Payment
+                        {% elif order.payment_method == 'card' %}Credit/Debit Card
+                        {% else %}{{ order.payment_method }}{% endif %}
+                    </p>
+                    <p style="font-size: 13px;">
+                        <strong>Status:</strong> 
+                        <span style="text-transform: capitalize; padding: 2px 6px; border-radius: 8px; font-size: 11px;
+                                    {% if order.status == 'completed' %}background-color: #d1e7dd; color: var(--color-success-fg);
+                                    {% elif order.status == 'pending' %}background-color: #fff3cd; color: var(--color-attention-fg);
+                                    {% elif order.status == 'processing' %}background-color: #cff4fc; color: var(--color-accent-fg);
+                                    {% elif order.status == 'shipped' %}background-color: #e2e3e5; color: var(--color-fg-default);
+                                    {% else %}background-color: var(--color-canvas-subtle); color: var(--color-fg-muted);{% endif %}">
+                            {{ order.status }}
+                        </span>
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Order Meta -->
+        <div style="margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--color-border-default); 
+                    color: var(--color-fg-muted); font-size: 11px;">
+            Full Order ID: {{ order.order_id }}
+        </div>
+    </div>
+    {% endfor %}
+{% else %}
+    <div style="text-align: center; padding: 64px 0;">
+        <div style="font-size: 64px; margin-bottom: 16px;">📋</div>
+        <h2 style="margin-bottom: 8px;">No orders to manage</h2>
+        <p style="color: var(--color-fg-muted); margin-bottom: 24px;">
+            Customer orders will appear here when they start shopping
+        </p>
+        <a href="/products" class="btn btn-primary">View Products</a>
+    </div>
+{% endif %}
+
+<script>
+// Auto-submit status changes
+document.querySelectorAll('select[name="status"]').forEach(select => {
+    select.addEventListener('change', function() {
+        const currentStatus = this.getAttribute('data-current');
+        if (this.value !== currentStatus) {
+            if (confirm('Update order status to ' + this.value + '?')) {
+                this.form.submit();
+            } else {
+                this.value = currentStatus;
+            }
+        }
+    });
+    
+    // Store current status
+    select.setAttribute('data-current', select.value);
+});
+</script>
+{% endblock %}

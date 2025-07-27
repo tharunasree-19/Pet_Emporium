@@ -1,0 +1,125 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 24px;">
+    <a href="/cart" style="color: var(--color-accent-fg); text-decoration: none;">← Back to Cart</a>
+</div>
+
+<h1 style="font-size: 36px; margin-bottom: 32px;">Checkout</h1>
+
+<div class="grid" style="grid-template-columns: 2fr 1fr; gap: 32px;">
+    <!-- Checkout Form -->
+    <div>
+        <form method="POST">
+            <div class="card" style="margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px;">Shipping Information</h3>
+                
+                <div class="form-group">
+                    <label for="shipping_address" class="form-label">Shipping Address *</label>
+                    <textarea id="shipping_address" name="shipping_address" class="form-control" 
+                              rows="4" required placeholder="Enter your complete address with city, state, and PIN code"></textarea>
+                </div>
+            </div>
+
+            <div class="card" style="margin-bottom: 24px;">
+                <h3 style="margin-bottom: 16px;">Payment Method</h3>
+                
+                <div class="form-group">
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px; border: 1px solid var(--color-border-default); border-radius: 6px;">
+                            <input type="radio" name="payment_method" value="cod" required>
+                            <div>
+                                <strong>Cash on Delivery</strong>
+                                <div style="font-size: 12px; color: var(--color-fg-muted);">Pay when your order arrives</div>
+                            </div>
+                        </label>
+                        
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px; border: 1px solid var(--color-border-default); border-radius: 6px;">
+                            <input type="radio" name="payment_method" value="upi" required>
+                            <div>
+                                <strong>UPI Payment</strong>
+                                <div style="font-size: 12px; color: var(--color-fg-muted);">Pay using UPI apps</div>
+                            </div>
+                        </label>
+                        
+                        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; padding: 12px; border: 1px solid var(--color-border-default); border-radius: 6px;">
+                            <input type="radio" name="payment_method" value="card" required>
+                            <div>
+                                <strong>Credit/Debit Card</strong>
+                                <div style="font-size: 12px; color: var(--color-fg-muted);">Pay using your card</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; padding: 16px; font-size: 16px;">
+                Place Order
+            </button>
+        </form>
+    </div>
+
+    <!-- Order Summary -->
+    <div>
+        <div class="card" style="position: sticky; top: 100px;">
+            <h3 style="margin-bottom: 16px;">Order Summary</h3>
+            
+            <!-- Cart Items Preview -->
+            <div style="max-height: 300px; overflow-y: auto; margin-bottom: 16px;">
+                {% if cart_items %}
+                    {% for item in cart_items %}
+                    <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-border-muted);">
+                        <div style="flex: 1;">
+                            <div style="font-size: 14px; font-weight: 500;">{{ item.product.name }}</div>
+                            <div style="font-size: 12px; color: var(--color-fg-muted);">Qty: {{ item.quantity }}</div>
+                        </div>
+                        <div style="font-weight: 500;">₹{{ item.product.price }}</div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+            
+            <div style="border-top: 1px solid var(--color-border-default); padding-top: 16px;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span>Subtotal:</span>
+                    <span>₹{{ "%.2f"|format(cart_items|sum(attribute='item_total')) if cart_items else '0.00' }}</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--color-fg-muted);">
+                    <span>Shipping:</span>
+                    <span>Free</span>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--color-fg-muted);">
+                    <span>Tax:</span>
+                    <span>Included</span>
+                </div>
+                
+                <div style="border-top: 1px solid var(--color-border-default); padding-top: 12px;">
+                    <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 600;">
+                        <span>Total:</span>
+                        <span style="color: var(--color-success-fg);">₹{{ "%.2f"|format(cart_items|sum(attribute='item_total')) if cart_items else '0.00' }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Add interactivity to payment method selection
+document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
+    radio.addEventListener('change', function() {
+        // Remove active state from all labels
+        document.querySelectorAll('label').forEach(label => {
+            label.style.borderColor = 'var(--color-border-default)';
+            label.style.backgroundColor = 'transparent';
+        });
+        
+        // Add active state to selected label
+        this.parentElement.style.borderColor = 'var(--color-accent-fg)';
+        this.parentElement.style.backgroundColor = 'var(--color-canvas-subtle)';
+    });
+});
+</script>
+{% endblock %}

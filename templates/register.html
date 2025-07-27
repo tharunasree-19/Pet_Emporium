@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Register - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="max-width: 500px; margin: 0 auto;">
+    <div class="card">
+        <div style="text-align: center; margin-bottom: 32px;">
+            <h1 style="font-size: 32px; margin-bottom: 8px;">Join Our Community</h1>
+            <p style="color: var(--color-fg-muted);">Create your account to start shopping</p>
+        </div>
+
+        <form method="POST">
+            <div class="grid grid-2">
+                <div class="form-group">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="email" class="form-label">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">Password</label>
+                <input type="password" id="password" name="password" class="form-control" required>
+            </div>
+
+            <div class="form-group">
+                <label for="phone" class="form-label">Phone Number (Optional)</label>
+                <input type="tel" id="phone" name="phone" class="form-control">
+            </div>
+
+            <div class="form-group">
+                <label for="address" class="form-label">Address (Optional)</label>
+                <textarea id="address" name="address" class="form-control" rows="3"></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="role" class="form-label">Account Type</label>
+                <select id="role" name="role" class="form-control">
+                    <option value="customer">Customer</option>
+                    <option value="admin">Admin</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 12px;">
+                    Create Account
+                </button>
+            </div>
+        </form>
+
+        <div style="text-align: center; margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--color-border-default);">
+            <p style="color: var(--color-fg-muted);">
+                Already have an account? 
+                <a href="/login" style="color: var(--color-accent-fg); text-decoration: none;">Sign in here</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}
