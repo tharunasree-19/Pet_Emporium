@@ -385,6 +385,8 @@ def add_product():
 # ---------------------------------------
 # Shopping Cart Routes
 # ---------------------------------------
+
+
 from boto3.dynamodb.conditions import Key
 
 @app.route('/cart')
@@ -393,7 +395,6 @@ def cart():
     """View shopping cart"""
     try:
         response = cart_table.query(
-            IndexName='CustomerIndex',
             KeyConditionExpression=Key('customer_id').eq(session['user_id'])
         )
         cart_items = response.get('Items', [])
@@ -425,6 +426,7 @@ def cart():
         flash(f'Error loading cart: {str(e)}')
         return render_template('cart.html', cart_items=[], total_amount=0.0)
 
+
 @app.route('/cart/add', methods=['POST'])
 @customer_required
 def add_to_cart():
@@ -435,24 +437,28 @@ def add_to_cart():
 
     if not product_id:
         flash('Invalid product.')
-        return redirect(url_for('cart'))
-
-    cart_id = f"{session['user_id']}_{product_id}"
+        return redirect(url_for('products'))
 
     try:
-        existing = cart_table.get_item(Key={'cart_id': cart_id})
+        # Check if item exists
+        response = cart_table.get_item(Key={
+            'customer_id': session['user_id'],
+            'product_id': product_id
+        })
 
-        if 'Item' in existing:
-            # Item exists → Update quantity
+        if 'Item' in response:
+            # Update quantity
             cart_table.update_item(
-                Key={'cart_id': cart_id},
+                Key={
+                    'customer_id': session['user_id'],
+                    'product_id': product_id
+                },
                 UpdateExpression='SET quantity = quantity + :q',
                 ExpressionAttributeValues={':q': quantity}
             )
         else:
-            # New item
+            # Add new item
             cart_table.put_item(Item={
-                'cart_id': cart_id,
                 'customer_id': session['user_id'],
                 'product_id': product_id,
                 'quantity': quantity,
@@ -467,18 +473,23 @@ def add_to_cart():
         flash('Failed to add item to cart.')
         return redirect(url_for('products'))
 
-@app.route('/cart/remove/<cart_id>')
+
+@app.route('/cart/remove/<product_id>')
 @customer_required
-def remove_from_cart(cart_id):
+def remove_from_cart(product_id):
     """Remove item from cart"""
     try:
-        cart_table.delete_item(Key={'cart_id': cart_id})
+        cart_table.delete_item(Key={
+            'customer_id': session['user_id'],
+            'product_id': product_id
+        })
         flash('Item removed from cart.')
     except Exception as e:
         print(f"[Cart Remove Error] {e}")
         flash('Failed to remove item from cart.')
 
     return redirect(url_for('cart'))
+
 
 # ---------------------------------------
 # Order Management Routes
