@@ -494,6 +494,21 @@ def remove_from_cart(product_id):
 # ---------------------------------------
 # Order Management Routes
 # ---------------------------------------
+
+from boto3.dynamodb.conditions import Key
+from decimal import Decimal
+
+def convert_decimals(obj):
+    """Convert DynamoDB Decimal objects to float for JSON serialization"""
+    if isinstance(obj, list):
+        return [convert_decimals(item) for item in obj]
+    elif isinstance(obj, dict):
+        return {key: convert_decimals(value) for key, value in obj.items()}
+    elif isinstance(obj, Decimal):
+        return float(obj)
+    else:
+        return obj
+
 @app.route('/orders')
 @customer_required
 def orders():
@@ -506,12 +521,23 @@ def orders():
         )
         customer_orders = response.get('Items', [])
         
+        # Convert DynamoDB types to regular Python types
+        customer_orders = convert_decimals(customer_orders)
+        
+        print(f"[DEBUG] Converted orders: {len(customer_orders)} orders")
+        if customer_orders:
+            print(f"[DEBUG] Sample converted order items: {type(customer_orders[0].get('items'))}")
+        
         return render_template('orders.html', orders=customer_orders)
         
     except Exception as e:
         print(f"[Orders Error] {e}")
+        import traceback
+        traceback.print_exc()
         flash(f'Error loading orders: {str(e)}')
         return render_template('orders.html', orders=[])
+
+
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 
