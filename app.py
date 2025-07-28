@@ -512,6 +512,9 @@ def orders():
         flash(f'Error loading orders: {str(e)}')
         return render_template('orders.html', orders=[])
 
+from boto3.dynamodb.conditions import Key
+from decimal import Decimal
+
 @app.route('/checkout', methods=['GET', 'POST'])
 @customer_required
 def checkout():
@@ -527,11 +530,9 @@ def checkout():
             return render_template('checkout.html')
         
         try:
-            # Get cart items
+            # Get cart items (fix: remove IndexName and use Key condition directly)
             cart_response = cart_table.query(
-                IndexName='CustomerIndex',
-                KeyConditionExpression='customer_id = :customer_id',
-                ExpressionAttributeValues={':customer_id': session['user_id']}
+                KeyConditionExpression=Key('customer_id').eq(session['user_id'])
             )
             cart_items = cart_response.get('Items', [])
             
@@ -583,27 +584,38 @@ def checkout():
             return redirect(url_for('orders'))
             
         except Exception as e:
+            print(f"[Checkout Error] {e}")
             flash('Failed to place order')
             return render_template('checkout.html')
     
     # GET: Show checkout form
     try:
-        # Get cart items for review
+        # Get cart items with full product details
         cart_response = cart_table.query(
-            IndexName='CustomerIndex',
-            KeyConditionExpression='customer_id = :customer_id',
-            ExpressionAttributeValues={':customer_id': session['user_id']}
+            KeyConditionExpression=Key('customer_id').eq(session['user_id'])
         )
-        cart_items = cart_response.get('Items', [])
-        
+        raw_items = cart_response.get('Items', [])
+
+        cart_items = []
+        for item in raw_items:
+            product_response = products_table.get_item(Key={'product_id': item['product_id']})
+            product = product_response.get('Item')
+            if product:
+                item['product'] = product
+                item['item_total'] = float(product['price']) * int(item['quantity'])
+                cart_items.append(item)
+
         if not cart_items:
             flash('Cart is empty')
             return redirect(url_for('cart'))
-        
+
         return render_template('checkout.html', cart_items=cart_items)
+
     except Exception as e:
+        print(f"[Checkout Load Error] {e}")
         flash('Error loading checkout')
         return redirect(url_for('cart'))
+
 
 @app.route('/admin/orders')
 @admin_required
