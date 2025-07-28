@@ -512,7 +512,7 @@ def orders():
         flash(f'Error loading orders: {str(e)}')
         return render_template('orders.html', orders=[])
 
-from boto3.dynamodb.conditions import Key
+
 from decimal import Decimal
 
 @app.route('/checkout', methods=['GET', 'POST'])
@@ -597,19 +597,35 @@ def checkout():
         raw_items = cart_response.get('Items', [])
 
         cart_items = []
+        total_amount = 0
+        
         for item in raw_items:
-            product_response = products_table.get_item(Key={'product_id': item['product_id']})
-            product = product_response.get('Item')
-            if product:
-                item['product'] = product
-                item['item_total'] = float(product['price']) * int(item['quantity'])
-                cart_items.append(item)
+            try:
+                product_response = products_table.get_item(Key={'product_id': item['product_id']})
+                product = product_response.get('Item')
+                if product:
+                    item_total = float(product['price']) * int(item['quantity'])
+                    total_amount += item_total
+                    
+                    # Create a new cart item dictionary with all required fields
+                    cart_item = {
+                        'cart_id': item.get('cart_id'),
+                        'customer_id': item.get('customer_id'),
+                        'product_id': item.get('product_id'),
+                        'quantity': item.get('quantity'),
+                        'product': product,
+                        'item_total': item_total
+                    }
+                    cart_items.append(cart_item)
+            except Exception as item_error:
+                print(f"[Cart Item Error] Error processing item {item.get('product_id', 'unknown')}: {item_error}")
+                continue
 
         if not cart_items:
             flash('Cart is empty')
             return redirect(url_for('cart'))
 
-        return render_template('checkout.html', cart_items=cart_items)
+        return render_template('checkout.html', cart_items=cart_items, total_amount=total_amount)
 
     except Exception as e:
         print(f"[Checkout Load Error] {e}")
