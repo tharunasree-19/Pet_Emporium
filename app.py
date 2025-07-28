@@ -515,6 +515,9 @@ def orders():
 
 from decimal import Decimal
 
+from boto3.dynamodb.conditions import Key
+from decimal import Decimal
+
 @app.route('/checkout', methods=['GET', 'POST'])
 @customer_required
 def checkout():
@@ -541,20 +544,22 @@ def checkout():
                 return redirect(url_for('cart'))
             
             # Calculate total
-            total_amount = 0
+            total_amount = Decimal('0')
             order_items = []
             
             for item in cart_items:
                 product_response = products_table.get_item(Key={'product_id': item['product_id']})
                 product = product_response.get('Item')
                 if product:
-                    item_total = float(product['price']) * int(item['quantity'])
+                    price = Decimal(str(product['price']))
+                    quantity = int(item['quantity'])
+                    item_total = price * quantity
                     total_amount += item_total
                     order_items.append({
                         'product_id': item['product_id'],
                         'product_name': product['name'],
-                        'quantity': item['quantity'],
-                        'price': float(product['price']),
+                        'quantity': quantity,
+                        'price': price,
                         'total': item_total
                     })
             
@@ -565,7 +570,7 @@ def checkout():
                 'customer_id': session['user_id'],
                 'customer_name': session['username'],
                 'items': order_items,
-                'total_amount': Decimal(str(total_amount)),
+                'total_amount': total_amount,
                 'shipping_address': shipping_address,
                 'payment_method': payment_method,
                 'status': 'pending',
@@ -586,7 +591,34 @@ def checkout():
         except Exception as e:
             print(f"[Checkout Error] {e}")
             flash('Failed to place order')
-            return render_template('checkout.html')
+            # Get cart items for template in case of error
+            try:
+                cart_response = cart_table.query(
+                    KeyConditionExpression=Key('customer_id').eq(session['user_id'])
+                )
+                raw_items = cart_response.get('Items', [])
+                cart_items = []
+                total_amount = 0
+                
+                for item in raw_items:
+                    product_response = products_table.get_item(Key={'product_id': item['product_id']})
+                    product = product_response.get('Item')
+                    if product:
+                        item_total = float(product['price']) * int(item['quantity'])
+                        total_amount += item_total
+                        cart_item = {
+                            'cart_id': item.get('cart_id'),
+                            'customer_id': item.get('customer_id'),
+                            'product_id': item.get('product_id'),
+                            'quantity': item.get('quantity'),
+                            'product': product,
+                            'item_total': item_total
+                        }
+                        cart_items.append(cart_item)
+                
+                return render_template('checkout.html', cart_items=cart_items, total_amount=total_amount)
+            except:
+                return redirect(url_for('cart'))
     
     # GET: Show checkout form
     try:
