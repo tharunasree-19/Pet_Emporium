@@ -389,6 +389,10 @@ def add_product():
 
 from boto3.dynamodb.conditions import Key
 
+from boto3.dynamodb.conditions import Key
+from decimal import Decimal
+import uuid
+
 @app.route('/cart')
 @customer_required
 def cart():
@@ -437,28 +441,24 @@ def add_to_cart():
 
     if not product_id:
         flash('Invalid product.')
-        return redirect(url_for('products'))
+        return redirect(url_for('cart'))
+
+    cart_id = f"{session['user_id']}_{product_id}"
 
     try:
-        # Check if item exists
-        response = cart_table.get_item(Key={
-            'customer_id': session['user_id'],
-            'product_id': product_id
-        })
+        existing = cart_table.get_item(Key={'customer_id': session['user_id'], 'cart_id': cart_id})
 
-        if 'Item' in response:
+        if 'Item' in existing:
             # Update quantity
             cart_table.update_item(
-                Key={
-                    'customer_id': session['user_id'],
-                    'product_id': product_id
-                },
+                Key={'customer_id': session['user_id'], 'cart_id': cart_id},
                 UpdateExpression='SET quantity = quantity + :q',
                 ExpressionAttributeValues={':q': quantity}
             )
         else:
-            # Add new item
+            # New item
             cart_table.put_item(Item={
+                'cart_id': cart_id,
                 'customer_id': session['user_id'],
                 'product_id': product_id,
                 'quantity': quantity,
@@ -474,21 +474,19 @@ def add_to_cart():
         return redirect(url_for('products'))
 
 
-@app.route('/cart/remove/<product_id>')
+@app.route('/cart/remove/<cart_id>')
 @customer_required
-def remove_from_cart(product_id):
+def remove_from_cart(cart_id):
     """Remove item from cart"""
     try:
-        cart_table.delete_item(Key={
-            'customer_id': session['user_id'],
-            'product_id': product_id
-        })
+        cart_table.delete_item(Key={'customer_id': session['user_id'], 'cart_id': cart_id})
         flash('Item removed from cart.')
     except Exception as e:
         print(f"[Cart Remove Error] {e}")
         flash('Failed to remove item from cart.')
 
     return redirect(url_for('cart'))
+
 
 
 # ---------------------------------------
@@ -512,25 +510,22 @@ def orders():
         flash(f'Error loading orders: {str(e)}')
         return render_template('orders.html', orders=[])
 
-
 @app.route('/checkout', methods=['GET', 'POST'])
 @customer_required
 def checkout():
     """Process order checkout"""
-    try:
-        if request.method == 'POST':
-            data = request.form
+    if request.method == 'POST':
+        data = request.form
+        shipping_address = data.get('shipping_address')
+        payment_method = data.get('payment_method')
 
-            shipping_address = data.get('shipping_address')
-            payment_method = data.get('payment_method')
+        if not all([shipping_address, payment_method]):
+            flash('All fields are required')
+            return render_template('checkout.html')
 
-            if not all([shipping_address, payment_method]):
-                flash('All fields are required')
-                return render_template('checkout.html')
-
-            # Fetch cart items
+        try:
+            # Get cart items
             cart_response = cart_table.query(
-                IndexName='CustomerIndex',
                 KeyConditionExpression=Key('customer_id').eq(session['user_id'])
             )
             cart_items = cart_response.get('Items', [])
@@ -539,32 +534,24 @@ def checkout():
                 flash('Cart is empty')
                 return redirect(url_for('cart'))
 
-            # Process order details
             total_amount = 0
             order_items = []
 
             for item in cart_items:
                 product_response = products_table.get_item(Key={'product_id': item['product_id']})
                 product = product_response.get('Item')
+                if product:
+                    item_total = float(product['price']) * int(item['quantity'])
+                    total_amount += item_total
+                    order_items.append({
+                        'product_id': item['product_id'],
+                        'product_name': product['name'],
+                        'quantity': item['quantity'],
+                        'price': float(product['price']),
+                        'total': item_total
+                    })
 
-                if not product:
-                    continue
-
-                quantity = int(item['quantity'])
-                price = float(product['price'])
-                item_total = quantity * price
-
-                order_items.append({
-                    'product_id': item['product_id'],
-                    'product_name': product['name'],
-                    'quantity': quantity,
-                    'price': price,
-                    'total': item_total
-                })
-
-                total_amount += item_total
-
-            # Store order
+            # Create order
             order_id = str(uuid.uuid4())
             orders_table.put_item(Item={
                 'order_id': order_id,
@@ -578,40 +565,43 @@ def checkout():
                 'created_at': datetime.now().isoformat()
             })
 
-            # Clear cart after order
+            # Clear cart
             for item in cart_items:
-                cart_table.delete_item(Key={'cart_id': item['cart_id']})
+                cart_table.delete_item(Key={
+                    'customer_id': session['user_id'],
+                    'cart_id': item['cart_id']
+                })
 
-            # Send notification (if enabled)
-            message = (
-                f"🛒 New Order\n"
-                f"Order ID: {order_id}\n"
-                f"Customer: {session['username']}\n"
-                f"Total: ₹{total_amount}"
-            )
-            send_sns_notification(message, "New Order - Pet Shop")
+            # Send SNS notification
+            message = f"New order received!\nOrder ID: {order_id}\nCustomer: {session['username']}\nTotal: ₹{total_amount}"
+            send_sns_notification(message, "New Pet Store Order")
 
             flash('Order placed successfully!')
             return redirect(url_for('orders'))
 
-        else:
-            # GET: show checkout page
-            cart_response = cart_table.query(
-                IndexName='CustomerIndex',
-                KeyConditionExpression=Key('customer_id').eq(session['user_id'])
-            )
-            cart_items = cart_response.get('Items', [])
+        except Exception as e:
+            print(f"[Checkout Error] {e}")
+            flash('Failed to place order')
+            return render_template('checkout.html')
 
-            if not cart_items:
-                flash('Your cart is empty.')
-                return redirect(url_for('cart'))
+    # GET request
+    try:
+        cart_response = cart_table.query(
+            KeyConditionExpression=Key('customer_id').eq(session['user_id'])
+        )
+        cart_items = cart_response.get('Items', [])
 
-            return render_template('checkout.html', cart_items=cart_items)
+        if not cart_items:
+            flash('Cart is empty')
+            return redirect(url_for('cart'))
+
+        return render_template('checkout.html', cart_items=cart_items)
 
     except Exception as e:
-        print(f"[Checkout Error] {e}")
-        flash('An error occurred during checkout.')
+        print(f"[Checkout Load Error] {e}")
+        flash('Error loading checkout')
         return redirect(url_for('cart'))
+
 
 
 @app.route('/admin/orders')
