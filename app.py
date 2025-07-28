@@ -435,7 +435,7 @@ def add_to_cart():
 
     if not product_id:
         flash('Invalid product.')
-        return redirect(url_for('products'))
+        return redirect(url_for('cart'))
 
     cart_id = f"{session['user_id']}_{product_id}"
 
