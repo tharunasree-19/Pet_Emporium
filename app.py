@@ -305,28 +305,25 @@ def admin_dashboard():
 def products():
     """View all products, optionally filtered by category"""
     try:
-        # Fetch all products from DynamoDB
+        # Fetch all products
         response = products_table.scan()
         products_list = response.get('Items', [])
-        
-        # Get selected category from query params
+
+        # Filter by category if passed in URL query
         category = request.args.get('category')
-        
-        # Filter products by category if specified
         if category:
             products_list = [product for product in products_list if product.get('category') == category]
-        
+
         return render_template('products.html',
                                products=products_list,
                                selected_category=category or None)
-    
     except Exception as e:
         error_msg = f'Error loading products: {str(e)}'
-        print(error_msg)  # Log to console for debugging
+        print(error_msg)
         flash(error_msg)
-        return render_template('products.html',
-                               products=[],
-                               selected_category=None)
+        return render_template('products.html', products=[], selected_category=None)
+
+
 @app.route('/product/<product_id>')
 def product_details(product_id):
     """View single product details"""
