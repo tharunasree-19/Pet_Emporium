@@ -385,6 +385,8 @@ def add_product():
 # ---------------------------------------
 # Shopping Cart Routes
 # ---------------------------------------
+from boto3.dynamodb.conditions import Key
+
 @app.route('/cart')
 @customer_required
 def cart():
@@ -392,31 +394,36 @@ def cart():
     try:
         response = cart_table.query(
             IndexName='CustomerIndex',
-            KeyConditionExpression='customer_id = :customer_id',
-            ExpressionAttributeValues={':customer_id': session['user_id']}
+            KeyConditionExpression=Key('customer_id').eq(session['user_id'])
         )
         cart_items = response.get('Items', [])
-        
-        # Get product details for each cart item
+
         cart_with_products = []
-        total_amount = 0
-        
+        total_amount = 0.0
+
         for item in cart_items:
             product_response = products_table.get_item(Key={'product_id': item['product_id']})
             product = product_response.get('Item')
+
             if product:
-                item_total = float(product['price']) * int(item['quantity'])
+                quantity = int(item.get('quantity', 1))
+                price = float(product.get('price', 0))
+                item_total = quantity * price
+
                 cart_with_products.append({
                     'cart_item': item,
                     'product': product,
                     'item_total': item_total
                 })
+
                 total_amount += item_total
-        
+
         return render_template('cart.html', cart_items=cart_with_products, total_amount=total_amount)
+
     except Exception as e:
+        print(f"[Cart Load Error] {e}")
         flash(f'Error loading cart: {str(e)}')
-        return render_template('cart.html', cart_items=[], total_amount=0)
+        return render_template('cart.html', cart_items=[], total_amount=0.0)
 
 @app.route('/cart/add', methods=['POST'])
 @customer_required
@@ -425,39 +432,39 @@ def add_to_cart():
     data = request.form
     product_id = data.get('product_id')
     quantity = int(data.get('quantity', 1))
-    
+
     if not product_id:
-        flash('Invalid product')
+        flash('Invalid product.')
         return redirect(url_for('products'))
-    
+
+    cart_id = f"{session['user_id']}_{product_id}"
+
     try:
-        # Check if item already in cart
-        response = cart_table.get_item(Key={
-            'cart_id': f"{session['user_id']}_{product_id}"
-        })
-        
-        if 'Item' in response:
-            # Update quantity
+        existing = cart_table.get_item(Key={'cart_id': cart_id})
+
+        if 'Item' in existing:
+            # Item exists → Update quantity
             cart_table.update_item(
-                Key={'cart_id': f"{session['user_id']}_{product_id}"},
-                UpdateExpression='SET quantity = quantity + :qty',
-                ExpressionAttributeValues={':qty': quantity}
+                Key={'cart_id': cart_id},
+                UpdateExpression='SET quantity = quantity + :q',
+                ExpressionAttributeValues={':q': quantity}
             )
         else:
-            # Add new item
+            # New item
             cart_table.put_item(Item={
-                'cart_id': f"{session['user_id']}_{product_id}",
+                'cart_id': cart_id,
                 'customer_id': session['user_id'],
                 'product_id': product_id,
                 'quantity': quantity,
                 'added_at': datetime.now().isoformat()
             })
-        
-        flash('Item added to cart')
+
+        flash('Item added to cart.')
         return redirect(url_for('cart'))
-        
+
     except Exception as e:
-        flash('Failed to add item to cart')
+        print(f"[Cart Add Error] {e}")
+        flash('Failed to add item to cart.')
         return redirect(url_for('products'))
 
 @app.route('/cart/remove/<cart_id>')
@@ -466,10 +473,11 @@ def remove_from_cart(cart_id):
     """Remove item from cart"""
     try:
         cart_table.delete_item(Key={'cart_id': cart_id})
-        flash('Item removed from cart')
+        flash('Item removed from cart.')
     except Exception as e:
-        flash('Failed to remove item')
-    
+        print(f"[Cart Remove Error] {e}")
+        flash('Failed to remove item from cart.')
+
     return redirect(url_for('cart'))
 
 # ---------------------------------------
