@@ -26,7 +26,7 @@
     {% for product in products %}
     <div class="card">
         {% if product.image_url %}
-        <img src="{{ product.image_url }}" alt="{{ product.name }}" 
+        <img src="{{ product.image_url }}" alt="{{ product.name }}"
              style="width: 100%; height: 200px; object-fit: cover; border-radius: 6px; margin-bottom: 12px;">
         {% else %}
         <div style="width: 100%; height: 200px; background-color: var(--color-canvas-subtle); 
@@ -35,12 +35,12 @@
             🐾
         </div>
         {% endif %}
-        
+
         <h3 style="margin-bottom: 8px; font-size: 18px;">{{ product.name }}</h3>
         <p style="color: var(--color-fg-muted); margin-bottom: 12px; font-size: 14px;">
             {{ product.description[:100] }}{% if product.description|length > 100 %}...{% endif %}
         </p>
-        
+
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
             <span style="font-size: 20px; font-weight: 600; color: var(--color-success-fg);">
                 ₹{{ product.price }}
@@ -61,7 +61,7 @@
             <span style="color: var(--color-danger-fg); font-size: 12px;">✗ Out of Stock</span>
             {% endif %}
         </div>
-        
+
         <div style="display: flex; gap: 8px;">
             <a href="/product/{{ product.product_id }}" class="btn" style="flex: 1; text-align: center;">
                 View Details
