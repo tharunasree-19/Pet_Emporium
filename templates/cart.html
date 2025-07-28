@@ -18,10 +18,10 @@
                 <!-- Product Image -->
                 <div style="flex-shrink: 0;">
                     {% if item.product.image_url %}
-                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}" 
+                    <img src="{{ item.product.image_url }}" alt="{{ item.product.name }}"
                          style="width: 100px; height: 100px; object-fit: cover; border-radius: 6px;">
                     {% else %}
-                    <div style="width: 100px; height: 100px; background-color: var(--color-canvas-subtle); 
+                    <div style="width: 100px; height: 100px; background-color: var(--color-canvas-subtle);
                                 border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 32px;">
                         🐾
                     </div>
@@ -31,12 +31,12 @@
                 <!-- Product Details -->
                 <div style="flex: 1;">
                     <h3 style="margin-bottom: 8px;">
-                        <a href="/product/{{ item.product.product_id }}" 
+                        <a href="/product/{{ item.product.product_id }}"
                            style="color: var(--color-fg-default); text-decoration: none;">
                             {{ item.product.name }}
                         </a>
                     </h3>
-                    
+
                     <p style="color: var(--color-fg-muted); margin-bottom: 12px; font-size: 14px;">
                         {{ item.product.description[:80] }}{% if item.product.description|length > 80 %}...{% endif %}
                     </p>
@@ -47,14 +47,14 @@
                             <span style="font-weight: 600;">₹{{ item.product.price }}</span>
                             <span style="color: var(--color-fg-muted); margin-left: 16px;">Qty: {{ item.cart_item.quantity }}</span>
                         </div>
-                        
+
                         <div style="display: flex; align-items: center; gap: 16px;">
                             <span style="font-size: 18px; font-weight: 600; color: var(--color-success-fg);">
                                 ₹{{ "%.2f"|format(item.item_total) }}
                             </span>
-                            <a href="/cart/remove/{{ item.cart_item.cart_id }}" 
+                            <a href="/cart/remove/{{ item.cart_item.cart_id }}"
                                class="btn btn-danger" style="font-size: 12px; padding: 4px 8px;"
-                               onclick="return confirm('Remove this item from cart?')">
+                               onclick="return confirm('Remove this item from your cart?');">
                                 Remove
                             </a>
                         </div>
@@ -69,7 +69,7 @@
     <div>
         <div class="card" style="position: sticky; top: 100px;">
             <h3 style="margin-bottom: 16px;">Order Summary</h3>
-            
+
             <div style="border-bottom: 1px solid var(--color-border-default); padding-bottom: 16px; margin-bottom: 16px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                     <span>Items ({{ cart_items|length }}):</span>
@@ -93,6 +93,7 @@
     </div>
 </div>
 {% else %}
+<!-- Empty Cart -->
 <div style="text-align: center; padding: 64px 0;">
     <div style="font-size: 64px; margin-bottom: 16px;">🛒</div>
     <h2 style="margin-bottom: 8px;">Your cart is empty</h2>
