@@ -73,7 +73,7 @@
                     <div style="display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid var(--color-border-muted);">
                         <div style="flex: 1;">
                             <div style="font-size: 14px; font-weight: 500;">{{ item.product.name }}</div>
-                            <div style="font-size: 12px; color: var(--color-fg-muted);">Qty: {{ item.quantity }}</div>
+                            <div style="font-size: 12px; color: var(--color-fg-muted);">Qty: {{ item.cart_item.quantity }}</div>
                         </div>
                         <div style="font-weight: 500;">₹{{ item.product.price }}</div>
                     </div>
@@ -84,7 +84,7 @@
             <div style="border-top: 1px solid var(--color-border-default); padding-top: 16px;">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
                     <span>Subtotal:</span>
-                    <span>₹{{ "%.2f"|format(cart_items|sum(attribute='item_total')) if cart_items else '0.00' }}</span>
+                    <span>₹{{ "%.2f"|format(total_amount) }}</span>
                 </div>
                 <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: var(--color-fg-muted);">
                     <span>Shipping:</span>
@@ -98,7 +98,7 @@
                 <div style="border-top: 1px solid var(--color-border-default); padding-top: 12px;">
                     <div style="display: flex; justify-content: space-between; font-size: 18px; font-weight: 600;">
                         <span>Total:</span>
-                        <span style="color: var(--color-success-fg);">₹{{ "%.2f"|format(cart_items|sum(attribute='item_total')) if cart_items else '0.00' }}</span>
+                        <span style="color: var(--color-success-fg);">₹{{ "%.2f"|format(total_amount) }}</span>
                     </div>
                 </div>
             </div>
@@ -107,16 +107,13 @@
 </div>
 
 <script>
-// Add interactivity to payment method selection
+// Highlight selected payment option
 document.querySelectorAll('input[name="payment_method"]').forEach(radio => {
     radio.addEventListener('change', function() {
-        // Remove active state from all labels
         document.querySelectorAll('label').forEach(label => {
             label.style.borderColor = 'var(--color-border-default)';
             label.style.backgroundColor = 'transparent';
         });
-        
-        // Add active state to selected label
         this.parentElement.style.borderColor = 'var(--color-accent-fg)';
         this.parentElement.style.backgroundColor = 'var(--color-canvas-subtle)';
     });
