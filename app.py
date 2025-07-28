@@ -512,52 +512,59 @@ def orders():
         flash(f'Error loading orders: {str(e)}')
         return render_template('orders.html', orders=[])
 
+
 @app.route('/checkout', methods=['GET', 'POST'])
 @customer_required
 def checkout():
     """Process order checkout"""
-    if request.method == 'POST':
-        data = request.form
-        
-        shipping_address = data.get('shipping_address')
-        payment_method = data.get('payment_method')
-        
-        if not all([shipping_address, payment_method]):
-            flash('All fields are required')
-            return render_template('checkout.html')
-        
-        try:
-            # Get cart items
+    try:
+        if request.method == 'POST':
+            data = request.form
+
+            shipping_address = data.get('shipping_address')
+            payment_method = data.get('payment_method')
+
+            if not all([shipping_address, payment_method]):
+                flash('All fields are required')
+                return render_template('checkout.html')
+
+            # Fetch cart items
             cart_response = cart_table.query(
                 IndexName='CustomerIndex',
-                KeyConditionExpression='customer_id = :customer_id',
-                ExpressionAttributeValues={':customer_id': session['user_id']}
+                KeyConditionExpression=Key('customer_id').eq(session['user_id'])
             )
             cart_items = cart_response.get('Items', [])
-            
+
             if not cart_items:
                 flash('Cart is empty')
                 return redirect(url_for('cart'))
-            
-            # Calculate total
+
+            # Process order details
             total_amount = 0
             order_items = []
-            
+
             for item in cart_items:
                 product_response = products_table.get_item(Key={'product_id': item['product_id']})
                 product = product_response.get('Item')
-                if product:
-                    item_total = float(product['price']) * int(item['quantity'])
-                    total_amount += item_total
-                    order_items.append({
-                        'product_id': item['product_id'],
-                        'product_name': product['name'],
-                        'quantity': item['quantity'],
-                        'price': float(product['price']),
-                        'total': item_total
-                    })
-            
-            # Create order
+
+                if not product:
+                    continue
+
+                quantity = int(item['quantity'])
+                price = float(product['price'])
+                item_total = quantity * price
+
+                order_items.append({
+                    'product_id': item['product_id'],
+                    'product_name': product['name'],
+                    'quantity': quantity,
+                    'price': price,
+                    'total': item_total
+                })
+
+                total_amount += item_total
+
+            # Store order
             order_id = str(uuid.uuid4())
             orders_table.put_item(Item={
                 'order_id': order_id,
@@ -570,40 +577,42 @@ def checkout():
                 'status': 'pending',
                 'created_at': datetime.now().isoformat()
             })
-            
-            # Clear cart
+
+            # Clear cart after order
             for item in cart_items:
                 cart_table.delete_item(Key={'cart_id': item['cart_id']})
-            
-            # Send notification
-            message = f"New order received!\nOrder ID: {order_id}\nCustomer: {session['username']}\nTotal: ₹{total_amount}"
-            send_sns_notification(message, "New Pet Store Order")
-            
+
+            # Send notification (if enabled)
+            message = (
+                f"🛒 New Order\n"
+                f"Order ID: {order_id}\n"
+                f"Customer: {session['username']}\n"
+                f"Total: ₹{total_amount}"
+            )
+            send_sns_notification(message, "New Order - Pet Shop")
+
             flash('Order placed successfully!')
             return redirect(url_for('orders'))
-            
-        except Exception as e:
-            flash('Failed to place order')
-            return render_template('checkout.html')
-    
-    # GET: Show checkout form
-    try:
-        # Get cart items for review
-        cart_response = cart_table.query(
-            IndexName='CustomerIndex',
-            KeyConditionExpression='customer_id = :customer_id',
-            ExpressionAttributeValues={':customer_id': session['user_id']}
-        )
-        cart_items = cart_response.get('Items', [])
-        
-        if not cart_items:
-            flash('Cart is empty')
-            return redirect(url_for('cart'))
-        
-        return render_template('checkout.html', cart_items=cart_items)
+
+        else:
+            # GET: show checkout page
+            cart_response = cart_table.query(
+                IndexName='CustomerIndex',
+                KeyConditionExpression=Key('customer_id').eq(session['user_id'])
+            )
+            cart_items = cart_response.get('Items', [])
+
+            if not cart_items:
+                flash('Your cart is empty.')
+                return redirect(url_for('cart'))
+
+            return render_template('checkout.html', cart_items=cart_items)
+
     except Exception as e:
-        flash('Error loading checkout')
+        print(f"[Checkout Error] {e}")
+        flash('An error occurred during checkout.')
         return redirect(url_for('cart'))
+
 
 @app.route('/admin/orders')
 @admin_required
