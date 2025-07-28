@@ -518,6 +518,9 @@ from decimal import Decimal
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 
+from boto3.dynamodb.conditions import Key
+from decimal import Decimal
+
 @app.route('/checkout', methods=['GET', 'POST'])
 @customer_required
 def checkout():
@@ -579,7 +582,18 @@ def checkout():
             
             # Clear cart
             for item in cart_items:
-                cart_table.delete_item(Key={'cart_id': item['cart_id']})
+                print(f"[DEBUG] Cart item keys: {list(item.keys())}")
+                # Try different possible key combinations for cart deletion
+                if 'cart_id' in item:
+                    cart_table.delete_item(Key={'cart_id': item['cart_id']})
+                elif 'customer_id' in item and 'product_id' in item:
+                    # If cart uses composite key (customer_id + product_id)
+                    cart_table.delete_item(Key={
+                        'customer_id': item['customer_id'],
+                        'product_id': item['product_id']
+                    })
+                else:
+                    print(f"[ERROR] Cannot delete cart item - no valid key found: {item}")
             
             # Send notification
             message = f"New order received!\nOrder ID: {order_id}\nCustomer: {session['username']}\nTotal: ₹{total_amount}"
