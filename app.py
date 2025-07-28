@@ -499,19 +499,44 @@ def remove_from_cart(product_id):
 def orders():
     """View customer orders"""
     try:
-        response = orders_table.query(
-            IndexName='CustomerIndex',
-            KeyConditionExpression='customer_id = :customer_id',
-            ExpressionAttributeValues={':customer_id': session['user_id']},
-            ScanIndexForward=False
-        )
-        customer_orders = response.get('Items', [])
+        # Debug: Print the user_id being searched
+        print(f"[DEBUG] Searching orders for customer_id: {session['user_id']}")
+        
+        # Method 1: If using GSI (Global Secondary Index)
+        try:
+            response = orders_table.query(
+                IndexName='CustomerIndex',
+                KeyConditionExpression=Key('customer_id').eq(session['user_id']),
+                ScanIndexForward=False  # Latest orders first
+            )
+            customer_orders = response.get('Items', [])
+            print(f"[DEBUG] Found {len(customer_orders)} orders using GSI")
+        except:
+            # Method 2: If no GSI, scan the table (less efficient but works)
+            print("[DEBUG] GSI query failed, trying scan...")
+            response = orders_table.scan(
+                FilterExpression=Key('customer_id').eq(session['user_id'])
+            )
+            customer_orders = response.get('Items', [])
+            print(f"[DEBUG] Found {len(customer_orders)} orders using scan")
+        
+        # Debug: Print first order if exists
+        if customer_orders:
+            print(f"[DEBUG] Sample order: {customer_orders[0]}")
+        else:
+            print("[DEBUG] No orders found")
+            
+        # Sort orders by created_at (newest first) if not sorted by GSI
+        customer_orders.sort(key=lambda x: x.get('created_at', ''), reverse=True)
         
         return render_template('orders.html', orders=customer_orders)
+        
     except Exception as e:
+        print(f"[Orders Error] {e}")
+        import traceback
+        traceback.print_exc()
         flash(f'Error loading orders: {str(e)}')
         return render_template('orders.html', orders=[])
-
 
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
