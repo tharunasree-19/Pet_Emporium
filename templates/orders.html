@@ -38,9 +38,9 @@
 
         <!-- Order Items -->
         <div style="margin-bottom: 16px;">
-            <h4 style="margin-bottom: 12px; font-size: 16px;">Items Ordered ({{ order.items|length }})</h4>
+            <h4 style="margin-bottom: 12px; font-size: 16px;">Items Ordered ({{ order["items"]|length }})</h4>
             <div style="display: grid; gap: 8px;">
-                {% for item in order.items %}
+                {% for item in order["items"] %}
                 <div style="display: flex; justify-content: space-between; align-items: center; 
                             padding: 8px 0; border-bottom: 1px solid var(--color-border-muted);">
                     <div>
