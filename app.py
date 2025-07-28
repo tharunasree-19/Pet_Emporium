@@ -513,11 +513,6 @@ def orders():
         return render_template('orders.html', orders=[])
 
 
-from decimal import Decimal
-
-from boto3.dynamodb.conditions import Key
-from decimal import Decimal
-
 from boto3.dynamodb.conditions import Key
 from decimal import Decimal
 
@@ -582,18 +577,11 @@ def checkout():
             
             # Clear cart
             for item in cart_items:
-                print(f"[DEBUG] Cart item keys: {list(item.keys())}")
-                # Try different possible key combinations for cart deletion
-                if 'cart_id' in item:
-                    cart_table.delete_item(Key={'cart_id': item['cart_id']})
-                elif 'customer_id' in item and 'product_id' in item:
-                    # If cart uses composite key (customer_id + product_id)
-                    cart_table.delete_item(Key={
-                        'customer_id': item['customer_id'],
-                        'product_id': item['product_id']
-                    })
-                else:
-                    print(f"[ERROR] Cannot delete cart item - no valid key found: {item}")
+                # Cart table uses composite key (customer_id + product_id)
+                cart_table.delete_item(Key={
+                    'customer_id': item['customer_id'],
+                    'product_id': item['product_id']
+                })
             
             # Send notification
             message = f"New order received!\nOrder ID: {order_id}\nCustomer: {session['username']}\nTotal: ₹{total_amount}"
@@ -677,7 +665,6 @@ def checkout():
         print(f"[Checkout Load Error] {e}")
         flash('Error loading checkout')
         return redirect(url_for('cart'))
-
 
 @app.route('/admin/orders')
 @admin_required
