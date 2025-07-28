@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Error - Paws & Claws Pet Shop{% endblock %}
+
+{% block content %}
+<div style="text-align: center; padding: 64px 0;">
+    <div style="font-size: 96px; margin-bottom: 24px;">😿</div>
+    
+    <h1 style="font-size: 48px; margin-bottom: 16px; color: var(--color-danger-fg);">Oops!</h1>
+    
+    <h2 style="font-size: 24px; margin-bottom: 16px; color: var(--color-fg-muted);">
+        {{ error or "Something went wrong" }}
+    </h2>
+    
+    <p style="color: var(--color-fg-muted); margin-bottom: 32px; max-width: 500px; margin-left: auto; margin-right: auto;">
+        Don't worry, even the best pets have accidents sometimes. Let's get you back on track!
+    </p>
+    
+    <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap;">
+        <a href="/" class="btn btn-primary">🏠 Go Home</a>
+        <a href="/products" class="btn">🛍️ Shop Products</a>
+        <button onclick="history.back()" class="btn">← Go Back</button>
+    </div>
+</div>
+
+<script>
+// Add some fun interaction
+document.addEventListener('DOMContentLoaded', function() {
+    const errorEmoji = document.querySelector('div[style*="font-size: 96px"]');
+    if (errorEmoji) {
+        let emojis = ['😿', '🙀', '😾', '🐶', '🐱', '🐾'];
+        let currentIndex = 0;
+        
+        setInterval(function() {
+            currentIndex = (currentIndex + 1) % emojis.length;
+            errorEmoji.textContent = emojis[currentIndex];
+        }, 2000);
+    }
+});
+</script>
+{% endblock %}
