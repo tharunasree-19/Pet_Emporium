@@ -530,7 +530,7 @@ def checkout():
             return render_template('checkout.html')
         
         try:
-            # Get cart items (fix: remove IndexName and use Key condition directly)
+            # Get cart items
             cart_response = cart_table.query(
                 KeyConditionExpression=Key('customer_id').eq(session['user_id'])
             )
@@ -607,7 +607,7 @@ def checkout():
                     item_total = float(product['price']) * int(item['quantity'])
                     total_amount += item_total
                     
-                    # Create a new cart item dictionary with all required fields
+                    # Create cart item with flat structure
                     cart_item = {
                         'cart_id': item.get('cart_id'),
                         'customer_id': item.get('customer_id'),
